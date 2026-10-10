@@ -1,6 +1,22 @@
 use crate::hay::{SHERLOCK, SHERLOCK_CRLF};
 use crate::util::{Dir, TestCommand, sort_lines};
 
+rgtest!(
+    hidden_search_preserves_ignore_negation,
+    |dir: Dir, mut cmd: TestCommand| {
+        dir.create(".ignore", "*.log\n!important.log\n");
+        dir.create("visible.txt", "needle\n");
+        dir.create("debug.log", "needle\n");
+        dir.create("important.log", "needle\n");
+        dir.create(".hidden.txt", "needle\n");
+
+        cmd.args(&["--files-with-matches", "--sort", "path", "needle"]);
+        eqnice!("important.log\nvisible.txt\n", cmd.stdout());
+        cmd.arg("--hidden");
+        eqnice!(".hidden.txt\nimportant.log\nvisible.txt\n", cmd.stdout());
+    }
+);
+
 // See: https://github.com/BurntSushi/ripgrep/issues/1
 rgtest!(f1_sjis, |dir: Dir, mut cmd: TestCommand| {
     dir.create_bytes(
